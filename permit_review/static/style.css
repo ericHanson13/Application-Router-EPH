@@ -1,0 +1,54 @@
+:root {
+  --bg: #f6f7f9; --card: #fff; --text: #1d2330; --muted: #5d6676; --border: #dde1e7;
+  --pass: #13795b; --pass-bg: #e6f4ee; --fail: #b42318; --fail-bg: #fdecea;
+  --warn: #8a5a00; --warn-bg: #fff4dc; --accent: #2457c5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c; --card: #1d2128; --text: #e7e9ee; --muted: #9aa3b2; --border: #313742;
+    --pass: #4cc38a; --pass-bg: #173326; --fail: #ff7b6e; --fail-bg: #3a1d1b;
+    --warn: #f0b84a; --warn-bg: #3a2f17; --accent: #7aa2ff;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 920px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { margin: 0; font-size: 26px; }
+.sub, .muted { color: var(--muted); }
+.sub { margin: 4px 0 20px; }
+code { font-size: 13px; }
+.panel, .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.button, button { display: inline-block; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: .5; cursor: default; }
+.check { display: flex; gap: 6px; align-items: center; color: var(--muted); }
+.banner { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; }
+.banner.bad { background: var(--fail-bg); color: var(--fail); }
+.summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.stat { flex: 1; min-width: 120px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; }
+.stat b { display: block; font-size: 24px; }
+.card h2 { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 6px; font-size: 17px; word-break: break-all; }
+.badge { flex: none; font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+.badge.PASS { background: var(--pass-bg); color: var(--pass); }
+.badge.FAIL { background: var(--fail-bg); color: var(--fail); }
+.badge.ERROR { background: var(--warn-bg); color: var(--warn); }
+.badge.WAIT { background: var(--bg); color: var(--muted); }
+.missing { background: var(--fail-bg); border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
+.missing h3 { margin: 0 0 4px; font-size: 14px; color: var(--fail); }
+.missing ul { margin: 0; padding-left: 20px; }
+.error { color: var(--warn); }
+.all-good { color: var(--pass); margin: 8px 0; }
+details { margin-top: 8px; }
+summary { cursor: pointer; color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+td.ok { color: var(--pass); } td.no { color: var(--fail); }
+.group-title { font-size: 18px; margin: 24px 0 10px; }
+#approval h2 { margin: 0 0 4px; font-size: 18px; }
+.approve-list { list-style: none; padding: 0; margin: 12px 0; }
+.approve-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.approve-list label { display: flex; gap: 8px; align-items: center; word-break: break-all; }
+.approve-list .submitted { color: var(--pass); font-weight: 600; }
+.count { color: var(--muted); font-weight: 400; }

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Permit Review</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Permit Review</h1>
+      <p class="sub">Checks each permit application PDF in a folder: is the form filled in, and are the required attachments there?</p>
+    </header>
+
+    <div id="key-warning" class="banner bad" hidden>
+      No Claude API key found. Add <code>ANTHROPIC_API_KEY</code> to the <code>.env</code> file, then restart the server.
+    </div>
+
+    <section class="panel">
+      <div class="row">
+        <label class="button" for="folder">Choose folder…</label>
+        <input id="folder" type="file" webkitdirectory multiple hidden>
+      </div>
+      <p id="picked" class="muted">No folder chosen yet.</p>
+      <div class="row">
+        <button id="run" class="primary" disabled>Review PDFs</button>
+      </div>
+    </section>
+
+    <section id="summary" class="summary" hidden></section>
+    <div id="pending" class="group" hidden><h2 class="group-title"></h2></div>
+    <section id="approval" class="panel" hidden></section>
+    <section id="results">
+      <div id="passed" class="group" hidden><h2 class="group-title"></h2></div>
+      <div id="failed" class="group" hidden><h2 class="group-title"></h2></div>
+      <div id="errors" class="group" hidden><h2 class="group-title"></h2></div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
