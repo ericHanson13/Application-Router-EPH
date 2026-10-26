@@ -1,11 +1,20 @@
-"""Shapes of what Claude returns. Claude's answers are validated against these."""
+"""Shapes of what Claude returns. Claude's answers are validated against these.
+
+Each nested model is one slice of a permit packet. DocumentOverview is the full
+review: what the PDF is, which attachments the form requires, and how the
+applicant filled the form. Helpers on DocumentOverview turn that into pass/fail.
+"""
 
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
+# --- Pieces of a packet ---
+
 class Section(BaseModel):
+    """One contiguous part of the PDF (the form, a drawing, a license, etc.)."""
+
     title: str = Field(description="What this part of the PDF is, e.g. 'Building permit application' or 'Site plan'")
     kind: Literal["application_form", "attachment", "other"]
     start_page: int
@@ -13,6 +22,13 @@ class Section(BaseModel):
 
 
 class RequiredAttachment(BaseModel):
+    """A document the application form says must be attached, plus whether it actually is.
+
+    `applies` is judged from answers on the form (some items are only required
+    in certain cases). `satisfied` is True only if later pages are labeled as
+    that document — a checkbox on the form is not enough.
+    """
+
     name: str = Field(description="Short name of the document, e.g. 'Site plan'")
     requirement_text: str = Field(description="The form's wording for this requirement, quoted as closely as possible")
     listed_on_page: int = Field(description="Page of the PDF where the form lists this requirement")
@@ -31,6 +47,8 @@ class RequiredAttachment(BaseModel):
 
 
 class FormField(BaseModel):
+    """One fill-in on the application form (text, signature, date, or checkbox)."""
+
     label: str = Field(description="The field's label as printed on the form")
     page: int
     value: str = Field(description="What the applicant entered, or an empty string if nothing")
@@ -44,7 +62,11 @@ class FormField(BaseModel):
     note: str = Field(description="Why a blank field is not required, or what is unclear; otherwise empty")
 
 
+# --- Full review of one PDF ---
+
 class DocumentOverview(BaseModel):
+    """Claude's structured review of a single packet."""
+
     summary: str = Field(description="Two or three sentences on what this PDF contains")
     is_permit_application: bool = Field(description="True if the PDF contains a permit application form")
     sections: list[Section] = Field(description="Every distinct part of the PDF, in page order")
@@ -67,4 +89,7 @@ class DocumentOverview(BaseModel):
         return [a for a in self.required_attachments if a.applies != "no" and not a.satisfied]
 
     def passed(self) -> bool:
+        """True only if this is a permit application, every required field is filled, and every
+        applicable attachment is present. 'Unclear' attachments still fail (they might apply).
+        """
         return self.is_permit_application and not self.incomplete_fields() and not self.missing_attachments()

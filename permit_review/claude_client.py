@@ -1,4 +1,8 @@
-"""Calls to Claude. Each PDF is sent whole; Claude reads both its text and its page images."""
+"""Calls to Claude. Each PDF is sent whole; Claude reads both its text and its page images.
+
+The API is asked to return a DocumentOverview (see models.py). Size/page limits
+are checked here so we fail locally instead of with a vague API error.
+"""
 
 import base64
 
@@ -13,6 +17,7 @@ MODEL = "claude-opus-5-5"
 MAX_PDF_BYTES = 24 * 1024 * 1024
 MAX_PDF_PAGES = 600
 
+# Role and ground rules: stay on the pages, don't invent missing documents.
 SYSTEM_PROMPT = """You review permit application packets (building, sign, and similar permits) for a
 permitting office.
 A packet is one PDF. It usually starts with an application form a few pages long, and the
@@ -20,6 +25,7 @@ pages after it are attachments the applicant included, such as site plans, const
 drawings, contractor licenses, or proof of ownership. Some pages may be scans.
 Describe what is in the packet accurately and only from what is on the pages."""
 
+# The four review steps Claude must fill into DocumentOverview.
 REVIEW_PROMPT = """Review this PDF:
 1. Give a short summary, say whether it contains a permit application form, and list
    each distinct section in page order with its page range.
@@ -40,12 +46,15 @@ REVIEW_PROMPT = """Review this PDF:
    contents. A box on the form saying it is attached does not count by itself, and one page
    can't stand in for two different documents unless it is labeled as both."""
 
+# Extra hint for fillable PDFs: typed values may not appear in the rendered pages.
 FORM_VALUES_NOTE = """This PDF is a fillable form. These are the values stored in its form fields,
 which may not all be visible on the page images. Use them together with what you see:
 {values}"""
 
 
 class ReviewError(Exception):
+    """A problem with this PDF or Claude's answer — not a bad API key (that is raised as AuthenticationError)."""
+
     pass
 
 
@@ -55,6 +64,11 @@ def make_client() -> anthropic.Anthropic:
 
 
 def describe_pdf(client: anthropic.Anthropic, pdf: PdfFile) -> DocumentOverview:
+    """Send the whole PDF to Claude and parse the reply into DocumentOverview.
+
+    Raises ReviewError for size, page-count, refusal, or an unreadable answer.
+    Other Anthropic exceptions (auth, rate limit, network) are left for review.py.
+    """
     if pdf.size_bytes > MAX_PDF_BYTES:
         raise ReviewError(f"PDF is {pdf.size_bytes / 1e6:.0f} MB; the limit is about 24 MB.")
     if pdf.page_count and pdf.page_count > MAX_PDF_PAGES:
@@ -89,6 +103,7 @@ def describe_pdf(client: anthropic.Anthropic, pdf: PdfFile) -> DocumentOverview:
 
 
 def _prompt(pdf: PdfFile) -> str:
+    """Review instructions, plus stored form-field values when the PDF is fillable."""
     if not pdf.form_values:
         return REVIEW_PROMPT
     values = "\n".join(f"- {name}: {value or '(empty)'}" for name, value in pdf.form_values.items())

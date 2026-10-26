@@ -1,6 +1,9 @@
 """Command line entry point.
 
     python -m permit_review "C:\\Permits\\October"
+
+Walks a folder of PDFs, asks Claude to review each one (unless --dry-run),
+prints a short report, and writes a timestamped JSON file under --out.
 """
 
 import argparse
@@ -19,6 +22,7 @@ from permit_review.scanner import find_pdfs
 
 
 def parse_args(argv=None):
+    """Folder to scan, plus flags for recursion, listing-only, and where to save JSON."""
     p = argparse.ArgumentParser(prog="permit_review", description="Review building permit PDFs in a folder.")
     p.add_argument("folder", type=Path, help="Folder that contains the permit PDFs")
     p.add_argument("--recursive", action="store_true", help="Also look in subfolders")
@@ -28,8 +32,13 @@ def parse_args(argv=None):
 
 
 def main(argv=None, client=None) -> int:
+    """Run a folder review. `client` is injectable so tests can skip a real API.
+
+    Exit 0 on success (including an empty folder). Exit 2 for a missing folder,
+    missing API key, or rejected key — those are setup problems, not a bad PDF.
+    """
     args = parse_args(argv)
-    load_dotenv()
+    load_dotenv()  # picks up ANTHROPIC_API_KEY from .env in the working directory
 
     if not args.folder.is_dir():
         print(f"Folder not found: {args.folder}", file=sys.stderr)
@@ -40,6 +49,7 @@ def main(argv=None, client=None) -> int:
     if not pdfs:
         return 0
 
+    # Create the API client once for the whole folder (skipped in dry-run).
     if not args.dry_run and client is None:
         if not os.environ.get("ANTHROPIC_API_KEY"):
             print("ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key.", file=sys.stderr)
@@ -69,6 +79,7 @@ def main(argv=None, client=None) -> int:
         print()
         results.append(entry)
 
+    # Persist the full structured results; the terminal only showed a summary.
     if not args.dry_run:
         args.out.mkdir(parents=True, exist_ok=True)
         out_file = args.out / f"review-{datetime.now():%Y%m%d-%H%M%S}.json"
@@ -78,6 +89,7 @@ def main(argv=None, client=None) -> int:
 
 
 def _print_overview(overview):
+    """Human-readable summary: sections, attachment checklist, missing fields, PASS/FAIL."""
     tag = "permit application" if overview.is_permit_application else "NOT a permit application"
     print(f"   [{tag}] {overview.summary}")
     for s in overview.sections:

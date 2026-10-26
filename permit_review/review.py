@@ -1,4 +1,9 @@
-"""Review one PDF and summarize the outcome. Shared by the command line and the web page."""
+"""Review one PDF and summarize the outcome. Shared by the command line and the web page.
+
+This is the glue between scanner (local PDF facts), claude_client (the API call),
+and models (pass/fail). Callers get a JSON-ready dict they can print or send to
+the browser, plus the typed overview when the review actually ran.
+"""
 
 import anthropic
 
@@ -24,7 +29,7 @@ def review_pdf(client, pdf: PdfFile, name: str) -> tuple[dict, DocumentOverview 
         entry["error"] = str(e)
         return entry, None
     except anthropic.AuthenticationError:
-        raise
+        raise  # caller should stop the whole batch, not just this file
     except anthropic.RateLimitError:
         entry["error"] = "Rate limited by the Claude API; try again in a minute."
         return entry, None
@@ -35,6 +40,7 @@ def review_pdf(client, pdf: PdfFile, name: str) -> tuple[dict, DocumentOverview 
         entry["error"] = "Could not reach the Claude API. Check your internet connection."
         return entry, None
 
+    # Flatten the bits the UI and JSON report care about most, then keep the full overview.
     entry["overview"] = overview.model_dump()
     entry["incomplete_fields"] = [f.label for f in overview.incomplete_fields()]
     entry["missing_attachments"] = [a.name for a in overview.missing_attachments()]
